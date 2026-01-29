@@ -2,80 +2,127 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>Bitcoin Dashboard</title>
+  <title>Asset Dashboard</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 600px;
+      max-width: 800px;
       margin: 40px auto;
+      background-color: #f8f9fa;
+      color: #333;
     }
-    .box {
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .asset {
       border: 1px solid #ccc;
+      border-radius: 8px;
       padding: 16px;
-      margin-bottom: 12px;
-      border-radius: 6px;
+      margin-bottom: 16px;
+      background: #fff;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+    .asset-name {
+      font-weight: bold;
+      font-size: 1.2em;
     }
     .positive {
       color: green;
+      font-weight: bold;
     }
     .negative {
       color: red;
+      font-weight: bold;
+    }
+    .neutral {
+      color: gray;
+      font-weight: normal;
+    }
+    .header {
+      font-weight: bold;
+      background-color: #e9ecef;
+      padding: 10px;
+      border-radius: 8px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
     }
   </style>
 </head>
 <body>
 
-<h1>Bitcoin – Aktuelle Daten</h1>
+<h1>Asset Dashboard</h1>
 
-<div class="box">
-  <strong>Preis</strong><br>
-  USD: <span id="price-usd">–</span><br>
-  EUR: <span id="price-eur">–</span>
+<div class="header">
+  <div>Asset</div>
+  <div>Preis (USD)</div>
+  <div>Preis (EUR)</div>
+  <div>Δ 24h</div>
+  <div>Δ 7d</div>
 </div>
 
-<div class="box">
-  <strong>Veränderung</strong><br>
-  1 Stunde: <span id="change-1h">–</span><br>
-  12 Stunden: <span id="change-12h">–</span><br>
-  24 Stunden: <span id="change-24h">–</span><br>
-  7 Tage: <span id="change-7d">–</span>
+<div id="dashboard">
+  <!-- Assets werden hier eingefügt -->
 </div>
 
 <script>
-async function loadBitcoinData() {
-  const response = await fetch(
-    "https://api.coingecko.com/api/v3/simple/price" +
-    "?ids=bitcoin" +
-    "&vs_currencies=usd,eur" +
-    "&include_24hr_change=true" +
-    "&include_7d_change=true" +
-    "&include_1hr_change=true" +
-    "&include_12hr_change=true"
-  );
+const assets = [
+  { id: "bitcoin", name: "Bitcoin" },
+  { id: "ethereum", name: "Ethereum" },
+  { id: "solana", name: "Solana" },
+  { id: "binancecoin", name: "BNB" },
+  { id: "chainlink", name: "Chainlink" },
+  { id: "ripple", name: "XRP" },
+  { id: "hype", name: "Hype" },
+  { id: "gold", name: "Gold" },
+  { id: "silver", name: "Silber" }
+];
 
-  const data = await response.json();
-  const btc = data.bitcoin;
+async function loadAssets() {
+  try {
+    const ids = assets.map(a => a.id).join(",");
+    const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd,eur&include_24hr_change=true&include_7d_change=true`;
+    const response = await fetch(url);
+    const data = await response.json();
 
-  document.getElementById("price-usd").textContent =
-    btc.usd.toFixed(2) + " $";
+    const dashboard = document.getElementById("dashboard");
+    dashboard.innerHTML = ""; // Alte Werte löschen
 
-  document.getElementById("price-eur").textContent =
-    btc.eur.toFixed(2) + " €";
+    assets.forEach(asset => {
+      const info = data[asset.id];
+      if (!info) return;
 
-  setChange("change-1h", btc.usd_1h_change);
-  setChange("change-12h", btc.usd_12h_change);
-  setChange("change-24h", btc.usd_24h_change);
-  setChange("change-7d", btc.usd_7d_change);
+      const delta24 = info.usd_24h_change || 0;
+      const delta7d = info.usd_7d_change || 0;
+
+      const assetDiv = document.createElement("div");
+      assetDiv.className = "asset";
+
+      assetDiv.innerHTML = `
+        <div class="asset-name">${asset.name}</div>
+        <div>$${info.usd.toFixed(2)}</div>
+        <div>€${info.eur.toFixed(2)}</div>
+        <div class="${delta24 >=0 ? 'positive' : 'negative'}">${delta24.toFixed(2)}%</div>
+        <div class="${delta7d >=0 ? 'positive' : 'negative'}">${delta7d.toFixed(2)}%</div>
+      `;
+      dashboard.appendChild(assetDiv);
+    });
+
+  } catch (err) {
+    console.error("Fehler beim Laden der Daten:", err);
+  }
 }
 
-function setChange(elementId, value) {
-  const el = document.getElementById(elementId);
-  const rounded = value.toFixed(2);
-  el.textContent = rounded + " %";
-  el.className = value >= 0 ? "positive" : "negative";
-}
+// Erstmal laden
+loadAssets();
 
-loadBitcoinData();
+// Alle 10 Sekunden aktualisieren
+setInterval(loadAssets, 10000);
 </script>
 
 </body>
