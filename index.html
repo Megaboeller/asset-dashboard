@@ -1,62 +1,175 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <title>Asset Dashboard</title>
+<meta charset="UTF-8">
+<title>Asset Dashboard</title>
 
-  <style>
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont;
-      background-color: #0d1117;
-      color: #e6edf3;
-      margin: 20px;
-    }
+<style>
+body {
+  font-family: system-ui, -apple-system;
+  background: #0d1117;
+  color: #e6edf3;
+  margin: 20px;
+}
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+}
 
-    h1 {
-      text-align: center;
-      margin-bottom: 24px;
-    }
+.section-title {
+  margin: 25px 0 10px;
+  font-size: 1.1em;
+  color: #9ba3af;
+}
 
-    .header,
-    .row {
-      display: grid;
-      grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1fr;
-      gap: 10px;
-      align-items: center;
-      padding: 12px;
-      border-radius: 8px;
-    }
+.header, .row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1fr;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 8px;
+  align-items: center;
+}
 
-    .header {
-      font-weight: bold;
-      background-color: #161b22;
-      margin-bottom: 10px;
-    }
+.header {
+  background: #161b22;
+  font-weight: bold;
+}
 
-    .row {
-      background-color: #0f172a;
-      margin-bottom: 8px;
-    }
+.row {
+  background: #0f172a;
+  margin-bottom: 8px;
+}
 
-    .positive {
-      color: #4caf50;
-      font-weight: bold;
-    }
+.positive { color: #4caf50; font-weight: bold; }
+.negative { color: #f44336; font-weight: bold; }
+.neutral { color: #9ba3af; }
 
-    .negative {
-      color: #f44336;
-      font-weight: bold;
-    }
+#status {
+  text-align: center;
+  color: #9ba3af;
+  margin-bottom: 10px;
+}
 
-    /* Mobile Ansicht */
-    @media (max-width: 700px) {
-      .header {
-        display: none;
-      }
+/* Mobile */
+@media (max-width: 700px) {
+  .header { display: none; }
+  .row { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
 
-      .row {
-        grid-template-columns: 1fr 1fr;
-      }
+<body>
 
-      .label {
-        col
+<h1>Asset Dashboard</h1>
+<div id="status">Daten werden geladen…</div>
+
+<div class="section-title">Kryptowährungen</div>
+<div class="header">
+  <div>Asset</div><div>USD</div><div>EUR</div>
+  <div>Δ 1h</div><div>Δ 24h</div><div>Δ 7d</div>
+</div>
+<div id="crypto"></div>
+
+<div class="section-title">Edelmetalle</div>
+<div class="header">
+  <div>Asset</div><div>USD</div><div>EUR</div>
+  <div></div><div></div><div></div>
+</div>
+<div id="metals"></div>
+
+<script>
+const EUR_RATE = 0.93; // grober USD→EUR Faktor
+
+const cryptoIds = [
+  "bitcoin","ethereum","solana",
+  "binancecoin","chainlink","ripple"
+];
+
+let lastCryptoHTML = "";
+let lastMetalHTML = "";
+
+function pct(value) {
+  if (value === null || value === undefined) return "–";
+  const cls = value >= 0 ? "positive" : "negative";
+  return `<span class="${cls}">${value.toFixed(2)}%</span>`;
+}
+
+async function loadCrypto() {
+  const url =
+    "https://api.coingecko.com/api/v3/coins/markets" +
+    "?vs_currency=usd&ids=" + cryptoIds.join(",") +
+    "&price_change_percentage=1h,24h,7d";
+
+  const r = await fetch(url);
+  const data = await r.json();
+
+  let html = "";
+  data.forEach(a => {
+    html += `
+    <div class="row">
+      <div><strong>${a.name}</strong></div>
+      <div>$${a.current_price.toFixed(2)}</div>
+      <div>€${(a.current_price * EUR_RATE).toFixed(2)}</div>
+      <div>${pct(a.price_change_percentage_1h_in_currency)}</div>
+      <div>${pct(a.price_change_percentage_24h_in_currency)}</div>
+      <div>${pct(a.price_change_percentage_7d_in_currency)}</div>
+    </div>`;
+  });
+
+  lastCryptoHTML = html;
+  document.getElementById("crypto").innerHTML = html;
+}
+
+async function loadMetals() {
+  const r = await fetch("https://api.metals.live/v1/spot");
+  const data = await r.json();
+
+  let gold = data.find(x => x.gold);
+  let silver = data.find(x => x.silver);
+
+  let html = "";
+
+  if (gold) {
+    html += `
+    <div class="row">
+      <div><strong>Gold</strong></div>
+      <div>$${gold.gold.toFixed(2)}</div>
+      <div>€${(gold.gold * EUR_RATE).toFixed(2)}</div>
+      <div class="neutral">–</div><div class="neutral">–</div><div class="neutral">–</div>
+    </div>`;
+  }
+
+  if (silver) {
+    html += `
+    <div class="row">
+      <div><strong>Silber</strong></div>
+      <div>$${silver.silver.toFixed(2)}</div>
+      <div>€${(silver.silver * EUR_RATE).toFixed(2)}</div>
+      <div class="neutral">–</div><div class="neutral">–</div><div class="neutral">–</div>
+    </div>`;
+  }
+
+  lastMetalHTML = html;
+  document.getElementById("metals").innerHTML = html;
+}
+
+async function loadAll() {
+  try {
+    await loadCrypto();
+    await loadMetals();
+    document.getElementById("status").textContent = "Live";
+  } catch (e) {
+    document.getElementById("status").textContent =
+      "Daten aktuell nicht verfügbar – letzte Werte werden angezeigt";
+    if (lastCryptoHTML) document.getElementById("crypto").innerHTML = lastCryptoHTML;
+    if (lastMetalHTML) document.getElementById("metals").innerHTML = lastMetalHTML;
+  }
+}
+
+loadAll();
+setInterval(loadAll, 10000);
+</script>
+
+</body>
+</html>
