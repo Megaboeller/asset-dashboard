@@ -3,149 +3,60 @@
 <head>
   <meta charset="UTF-8">
   <title>Asset Dashboard</title>
+
   <style>
-    /* Grundlayout */
     body {
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont;
       background-color: #0d1117;
-      color: #ECEFF1;
-      max-width: 900px;
-      margin: 40px auto;
-      padding: 0 10px;
+      color: #e6edf3;
+      margin: 20px;
     }
+
     h1 {
       text-align: center;
-      margin-bottom: 30px;
-      color: #FFF;
+      margin-bottom: 24px;
     }
 
-    /* Header Row */
-    .header {
-      font-weight: bold;
+    .header,
+    .row {
       display: grid;
-      grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1fr 1fr;
+      grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1fr;
       gap: 10px;
-      padding: 10px;
-      border-radius: 8px;
-      background-color: #1f1f1f;
-      margin-bottom: 10px;
-      text-align: center;
-    }
-
-    /* Asset Cards */
-    .asset {
-      display: grid;
-      grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1fr 1fr;
-      gap: 10px;
+      align-items: center;
       padding: 12px;
       border-radius: 8px;
-      background-color: #121212;
-      margin-bottom: 10px;
-      text-align: center;
-      align-items: center;
-      transition: background 0.3s;
-    }
-    .asset:hover {
-      background-color: #1a1a1a;
     }
 
-    .asset-name {
+    .header {
       font-weight: bold;
-      color: #FFF;
+      background-color: #161b22;
+      margin-bottom: 10px;
+    }
+
+    .row {
+      background-color: #0f172a;
+      margin-bottom: 8px;
     }
 
     .positive {
-      color: #4CAF50;
+      color: #4caf50;
       font-weight: bold;
     }
+
     .negative {
-      color: #F44336;
+      color: #f44336;
       font-weight: bold;
     }
-    .neutral {
-      color: #B0BEC5;
-    }
-  </style>
-</head>
-<body>
 
-<h1>Asset Dashboard</h1>
+    /* Mobile Ansicht */
+    @media (max-width: 700px) {
+      .header {
+        display: none;
+      }
 
-<div class="header">
-  <div>Asset</div>
-  <div>Preis USD</div>
-  <div>Preis EUR</div>
-  <div>Δ 1h</div>
-  <div>Δ 12h</div>
-  <div>Δ 24h</div>
-  <div>Δ 7d</div>
-</div>
+      .row {
+        grid-template-columns: 1fr 1fr;
+      }
 
-<div id="dashboard">
-  <!-- Assets erscheinen hier -->
-</div>
-
-<script>
-const assets = [
-  { id: "bitcoin", name: "Bitcoin" },
-  { id: "ethereum", name: "Ethereum" },
-  { id: "solana", name: "Solana" },
-  { id: "binancecoin", name: "BNB" },
-  { id: "chainlink", name: "Chainlink" },
-  { id: "ripple", name: "XRP" },
-  { id: "hype", name: "Hype" },
-  { id: "gold", name: "Gold" },
-  { id: "silver", name: "Silber" }
-];
-
-async function loadAssets() {
-  try {
-    const ids = assets.map(a => a.id).join(",");
-    const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd,eur&include_1hr_change=true&include_12hr_change=true&include_24hr_change=true&include_7d_change=true`;
-    const response = await fetch(url);
-    const data = await response.json();
-
-    const dashboard = document.getElementById("dashboard");
-    dashboard.innerHTML = ""; // Alte Werte löschen
-
-    assets.forEach(asset => {
-      const info = data[asset.id];
-      if (!info) return;
-
-      const deltas = {
-        "1h": info.usd_1h_change || 0,
-        "12h": info.usd_12h_change || 0,
-        "24h": info.usd_24h_change || 0,
-        "7d": info.usd_7d_change || 0
-      };
-
-      const assetDiv = document.createElement("div");
-      assetDiv.className = "asset";
-
-      assetDiv.innerHTML = `
-        <div class="asset-name">${asset.name}</div>
-        <div>$${info.usd.toFixed(2)}</div>
-        <div>€${info.eur.toFixed(2)}</div>
-        <div class="${deltas["1h"] >= 0 ? 'positive' : 'negative'}">${deltas["1h"].toFixed(2)}%</div>
-        <div class="${deltas["12h"] >= 0 ? 'positive' : 'negative'}">${deltas["12h"].toFixed(2)}%</div>
-        <div class="${deltas["24h"] >= 0 ? 'positive' : 'negative'}">${deltas["24h"].toFixed(2)}%</div>
-        <div class="${deltas["7d"] >= 0 ? 'positive' : 'negative'}">${deltas["7d"].toFixed(2)}%</div>
-      `;
-
-      dashboard.appendChild(assetDiv);
-    });
-
-  } catch (err) {
-    console.error("Fehler beim Laden der Daten:", err);
-  }
-}
-
-// Erstmal laden
-loadAssets();
-
-// Alle 10 Sekunden aktualisieren
-setInterval(loadAssets, 10000);
-</script>
-
-</body>
-</html>
+      .label {
+        col
