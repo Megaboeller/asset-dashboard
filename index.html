@@ -4,53 +4,66 @@
   <meta charset="UTF-8">
   <title>Asset Dashboard</title>
   <style>
+    /* Grundlayout */
     body {
-      font-family: Arial, sans-serif;
-      max-width: 800px;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #0d1117;
+      color: #ECEFF1;
+      max-width: 900px;
       margin: 40px auto;
-      background-color: #f8f9fa;
-      color: #333;
+      padding: 0 10px;
     }
     h1 {
       text-align: center;
       margin-bottom: 30px;
+      color: #FFF;
     }
-    .asset {
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      padding: 16px;
-      margin-bottom: 16px;
-      background: #fff;
+
+    /* Header Row */
+    .header {
+      font-weight: bold;
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+      grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1fr 1fr;
       gap: 10px;
-      align-items: center;
+      padding: 10px;
+      border-radius: 8px;
+      background-color: #1f1f1f;
+      margin-bottom: 10px;
+      text-align: center;
     }
+
+    /* Asset Cards */
+    .asset {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1fr 1fr;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 8px;
+      background-color: #121212;
+      margin-bottom: 10px;
+      text-align: center;
+      align-items: center;
+      transition: background 0.3s;
+    }
+    .asset:hover {
+      background-color: #1a1a1a;
+    }
+
     .asset-name {
       font-weight: bold;
-      font-size: 1.2em;
+      color: #FFF;
     }
+
     .positive {
-      color: green;
+      color: #4CAF50;
       font-weight: bold;
     }
     .negative {
-      color: red;
+      color: #F44336;
       font-weight: bold;
     }
     .neutral {
-      color: gray;
-      font-weight: normal;
-    }
-    .header {
-      font-weight: bold;
-      background-color: #e9ecef;
-      padding: 10px;
-      border-radius: 8px;
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 10px;
+      color: #B0BEC5;
     }
   </style>
 </head>
@@ -60,14 +73,16 @@
 
 <div class="header">
   <div>Asset</div>
-  <div>Preis (USD)</div>
-  <div>Preis (EUR)</div>
+  <div>Preis USD</div>
+  <div>Preis EUR</div>
+  <div>Δ 1h</div>
+  <div>Δ 12h</div>
   <div>Δ 24h</div>
   <div>Δ 7d</div>
 </div>
 
 <div id="dashboard">
-  <!-- Assets werden hier eingefügt -->
+  <!-- Assets erscheinen hier -->
 </div>
 
 <script>
@@ -86,7 +101,7 @@ const assets = [
 async function loadAssets() {
   try {
     const ids = assets.map(a => a.id).join(",");
-    const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd,eur&include_24hr_change=true&include_7d_change=true`;
+    const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd,eur&include_1hr_change=true&include_12hr_change=true&include_24hr_change=true&include_7d_change=true`;
     const response = await fetch(url);
     const data = await response.json();
 
@@ -97,8 +112,12 @@ async function loadAssets() {
       const info = data[asset.id];
       if (!info) return;
 
-      const delta24 = info.usd_24h_change || 0;
-      const delta7d = info.usd_7d_change || 0;
+      const deltas = {
+        "1h": info.usd_1h_change || 0,
+        "12h": info.usd_12h_change || 0,
+        "24h": info.usd_24h_change || 0,
+        "7d": info.usd_7d_change || 0
+      };
 
       const assetDiv = document.createElement("div");
       assetDiv.className = "asset";
@@ -107,9 +126,12 @@ async function loadAssets() {
         <div class="asset-name">${asset.name}</div>
         <div>$${info.usd.toFixed(2)}</div>
         <div>€${info.eur.toFixed(2)}</div>
-        <div class="${delta24 >=0 ? 'positive' : 'negative'}">${delta24.toFixed(2)}%</div>
-        <div class="${delta7d >=0 ? 'positive' : 'negative'}">${delta7d.toFixed(2)}%</div>
+        <div class="${deltas["1h"] >= 0 ? 'positive' : 'negative'}">${deltas["1h"].toFixed(2)}%</div>
+        <div class="${deltas["12h"] >= 0 ? 'positive' : 'negative'}">${deltas["12h"].toFixed(2)}%</div>
+        <div class="${deltas["24h"] >= 0 ? 'positive' : 'negative'}">${deltas["24h"].toFixed(2)}%</div>
+        <div class="${deltas["7d"] >= 0 ? 'positive' : 'negative'}">${deltas["7d"].toFixed(2)}%</div>
       `;
+
       dashboard.appendChild(assetDiv);
     });
 
