@@ -5,7 +5,6 @@
 <title>Asset Dashboard</title>
 
 <style>
-/* ===== Grundlayout ===== */
 body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont;
   background: #0d1117;
@@ -15,7 +14,12 @@ body {
 
 h1 {
   text-align: center;
-  margin-bottom: 20px;
+}
+
+#status {
+  text-align: center;
+  color: #9ba3af;
+  margin-bottom: 10px;
 }
 
 .section-title {
@@ -24,7 +28,6 @@ h1 {
   color: #9ba3af;
 }
 
-/* ===== Tabellenlayout ===== */
 .header,
 .row {
   display: grid;
@@ -45,35 +48,13 @@ h1 {
   margin-bottom: 8px;
 }
 
-/* ===== Farben ===== */
-.positive {
-  color: #4caf50;
-  font-weight: bold;
-}
+.positive { color: #4caf50; font-weight: bold; }
+.negative { color: #f44336; font-weight: bold; }
+.neutral  { color: #9ba3af; }
 
-.negative {
-  color: #f44336;
-  font-weight: bold;
-}
-
-.neutral {
-  color: #9ba3af;
-}
-
-#status {
-  text-align: center;
-  color: #9ba3af;
-  margin-bottom: 10px;
-}
-
-/* ===== Mobile ===== */
 @media (max-width: 700px) {
-  .header {
-    display: none;
-  }
-  .row {
-    grid-template-columns: 1fr 1fr;
-  }
+  .header { display: none; }
+  .row { grid-template-columns: 1fr 1fr; }
 }
 </style>
 </head>
@@ -81,39 +62,24 @@ h1 {
 <body>
 
 <h1>Asset Dashboard</h1>
-<div id="status">Daten werden geladen…</div>
+<div id="status">Initialisiere…</div>
 
-<!-- ===== Kryptowährungen ===== -->
+<!-- Kryptowährungen -->
 <div class="section-title">Kryptowährungen</div>
-
 <div class="header">
-  <div>Asset</div>
-  <div>Preis USD</div>
-  <div>Preis EUR</div>
-  <div>Δ 1h</div>
-  <div>Δ 24h</div>
-  <div>Δ 7d</div>
+  <div>Asset</div><div>USD</div><div>EUR</div><div>1h</div><div>24h</div><div>7d</div>
 </div>
-
 <div id="crypto"></div>
 
-<!-- ===== Edelmetalle ===== -->
+<!-- Edelmetalle -->
 <div class="section-title">Edelmetalle</div>
-
 <div class="header">
-  <div>Asset</div>
-  <div>Preis USD</div>
-  <div>Preis EUR</div>
-  <div></div>
-  <div></div>
-  <div></div>
+  <div>Asset</div><div>USD</div><div>EUR</div><div></div><div></div><div></div>
 </div>
-
 <div id="metals"></div>
 
 <script>
-/* ===== Konfiguration ===== */
-const EUR_RATE = 0.93; // grober USD → EUR Umrechnungskurs
+const EUR_RATE = 0.93;
 
 const cryptoIds = [
   "bitcoin",
@@ -124,112 +90,120 @@ const cryptoIds = [
   "ripple"
 ];
 
-/* ===== Fallback-Speicher ===== */
 let lastCryptoHTML = "";
 let lastMetalHTML = "";
 
-/* ===== Helfer ===== */
-function pct(value) {
-  if (value === null || value === undefined) return "–";
-  const cls = value >= 0 ? "positive" : "negative";
-  return `<span class="${cls}">${value.toFixed(2)}%</span>`;
+function pct(v) {
+  if (v === null || v === undefined) return "–";
+  const c = v >= 0 ? "positive" : "negative";
+  return `<span class="${c}">${v.toFixed(2)}%</span>`;
 }
 
-/* ===== Kryptowährungen ===== */
+function updateTime() {
+  const now = new Date();
+  const t = now.toLocaleTimeString("de-DE");
+  document.getElementById("status").textContent =
+    `Live – letzte Aktualisierung: ${t}`;
+}
+
+/* ===== Crypto ===== */
 async function loadCrypto() {
-  const url =
-    "https://api.coingecko.com/api/v3/coins/markets" +
-    "?vs_currency=usd" +
-    "&ids=" + cryptoIds.join(",") +
-    "&price_change_percentage=1h,24h,7d";
-
-  const response = await fetch(url);
-  const data = await response.json();
-
-  let html = "";
-
-  data.forEach(asset => {
-    html += `
-      <div class="row">
-        <div><strong>${asset.name}</strong></div>
-        <div>$${asset.current_price.toFixed(2)}</div>
-        <div>€${(asset.current_price * EUR_RATE).toFixed(2)}</div>
-        <div>${pct(asset.price_change_percentage_1h_in_currency)}</div>
-        <div>${pct(asset.price_change_percentage_24h_in_currency)}</div>
-        <div>${pct(asset.price_change_percentage_7d_in_currency)}</div>
-      </div>
-    `;
-  });
-
-  lastCryptoHTML = html;
-  document.getElementById("crypto").innerHTML = html;
-}
-
-/* ===== Edelmetalle ===== */
-async function loadMetals() {
-  const response = await fetch("https://api.metals.live/v1/spot");
-  const data = await response.json();
-
-  let goldPrice = null;
-  let silverPrice = null;
-
-  data.forEach(entry => {
-    if (entry.gold !== undefined) goldPrice = entry.gold;
-    if (entry.silver !== undefined) silverPrice = entry.silver;
-  });
-
-  let html = "";
-
-  if (goldPrice !== null) {
-    html += `
-      <div class="row">
-        <div><strong>Gold</strong></div>
-        <div>$${goldPrice.toFixed(2)}</div>
-        <div>€${(goldPrice * EUR_RATE).toFixed(2)}</div>
-        <div class="neutral">–</div>
-        <div class="neutral">–</div>
-        <div class="neutral">–</div>
-      </div>
-    `;
-  }
-
-  if (silverPrice !== null) {
-    html += `
-      <div class="row">
-        <div><strong>Silber</strong></div>
-        <div>$${silverPrice.toFixed(2)}</div>
-        <div>€${(silverPrice * EUR_RATE).toFixed(2)}</div>
-        <div class="neutral">–</div>
-        <div class="neutral">–</div>
-        <div class="neutral">–</div>
-      </div>
-    `;
-  }
-
-  lastMetalHTML = html;
-  document.getElementById("metals").innerHTML = html;
-}
-
-/* ===== Gesamt-Loader ===== */
-async function loadAll() {
   try {
-    await loadCrypto();
-    await loadMetals();
-    document.getElementById("status").textContent = "Live";
-  } catch (e) {
-    document.getElementById("status").textContent =
-      "Daten aktuell nicht verfügbar – letzte Werte werden angezeigt";
+    const url =
+      "https://api.coingecko.com/api/v3/coins/markets" +
+      "?vs_currency=usd" +
+      "&ids=" + cryptoIds.join(",") +
+      "&price_change_percentage=1h,24h,7d";
 
+    const r = await fetch(url);
+    if (!r.ok) throw new Error("Crypto API");
+
+    const data = await r.json();
+    let html = "";
+
+    data.forEach(a => {
+      html += `
+      <div class="row">
+        <div><strong>${a.name}</strong></div>
+        <div>$${a.current_price.toFixed(2)}</div>
+        <div>€${(a.current_price * EUR_RATE).toFixed(2)}</div>
+        <div>${pct(a.price_change_percentage_1h_in_currency)}</div>
+        <div>${pct(a.price_change_percentage_24h_in_currency)}</div>
+        <div>${pct(a.price_change_percentage_7d_in_currency)}</div>
+      </div>`;
+    });
+
+    lastCryptoHTML = html;
+    document.getElementById("crypto").innerHTML = html;
+    return true;
+  } catch {
     if (lastCryptoHTML) {
       document.getElementById("crypto").innerHTML = lastCryptoHTML;
     }
-    if (lastMetalHTML) {
-      document.getElementById("metals").innerHTML = lastMetalHTML;
-    }
+    return false;
   }
 }
 
-/* ===== Start ===== */
+/* ===== Metals ===== */
+async function loadMetals() {
+  try {
+    const r = await fetch("https://api.metals.live/v1/spot");
+    if (!r.ok) throw new Error("Metals API");
+
+    const data = await r.json();
+    let gold = null, silver = null;
+
+    data.forEach(e => {
+      if (e.gold !== undefined) gold = e.gold;
+      if (e.silver !== undefined) silver = e.silver;
+    });
+
+    let html = "";
+
+    if (gold !== null) {
+      html += `
+      <div class="row">
+        <div><strong>Gold</strong></div>
+        <div>$${gold.toFixed(2)}</div>
+        <div>€${(gold * EUR_RATE).toFixed(2)}</div>
+        <div class="neutral">–</div><div class="neutral">–</div><div class="neutral">–</div>
+      </div>`;
+    }
+
+    if (silver !== null) {
+      html += `
+      <div class="row">
+        <div><strong>Silber</strong></div>
+        <div>$${silver.toFixed(2)}</div>
+        <div>€${(silver * EUR_RATE).toFixed(2)}</div>
+        <div class="neutral">–</div><div class="neutral">–</div><div class="neutral">–</div>
+      </div>`;
+    }
+
+    lastMetalHTML = html;
+    document.getElementById("metals").innerHTML = html;
+    return true;
+  } catch {
+    if (lastMetalHTML) {
+      document.getElementById("metals").innerHTML = lastMetalHTML;
+    }
+    return false;
+  }
+}
+
+/* ===== Main ===== */
+async function loadAll() {
+  const c = await loadCrypto();
+  const m = await loadMetals();
+
+  if (c || m) {
+    updateTime();
+  } else {
+    document.getElementById("status").textContent =
+      "Daten momentan nicht verfügbar";
+  }
+}
+
 loadAll();
 setInterval(loadAll, 10000);
 </script>
